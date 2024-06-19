@@ -26,6 +26,10 @@ config = load_config()
 logger = logging.getLogger("log")
 logger.setLevel(logging.INFO)
 
+avatars_dir = config["avatars_dir"]
+
+os.makedirs(avatars_dir, exist_ok=True)
+
 if not logger.handlers:
     fh = logging.FileHandler("log.log")
     fh.setLevel(logging.INFO)
@@ -33,15 +37,18 @@ if not logger.handlers:
     ch.setLevel(logging.INFO)
     logger.addHandler(fh)
     logger.addHandler(ch)
-
+    
 while True:
 	sesh = Session(client_identifier="chrome_115", random_tls_extension_order=True)
 	token = config["token"]
 
-	avatars_dir = config["avatars_dir"]
 	avatar_files = os.listdir(avatars_dir)
-	random_avatar_file = random.choice(avatar_files)
-	path = os.path.join(avatars_dir, random_avatar_file)
+	if avatar_files:  # Checks if the list is not empty
+			random_avatar_file = random.choice(avatar_files)
+			path = os.path.join(avatars_dir, random_avatar_file)
+	else:
+			print("No avatar files found.")
+			break
 	
 	headers = {
 					"authority": "discord.com",
