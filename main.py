@@ -1,0 +1,84 @@
+import base64
+import os
+import random
+import time
+import datetime
+import logging
+import json
+from tls_client import Session
+ 
+def load_config():
+    if os.path.exists('config.json'):
+        with open('config.json', 'r') as file:
+            return json.load(file)
+    else:
+        config = {
+            "token": input("Enter your token: "),
+            "avatars_dir": input("Enter the path to your avatars directory: ")
+        }
+        
+        with open('config.json', 'w') as file:
+            json.dump(config, file, indent=4)
+        return config
+
+config = load_config()
+
+logger = logging.getLogger("log")
+logger.setLevel(logging.INFO)
+
+if not logger.handlers:
+    fh = logging.FileHandler("log.log")
+    fh.setLevel(logging.INFO)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+
+while True:
+	sesh = Session(client_identifier="chrome_115", random_tls_extension_order=True)
+	token = config["token"]
+
+	avatars_dir = config["avatars_dir"]
+	avatar_files = os.listdir(avatars_dir)
+	random_avatar_file = random.choice(avatar_files)
+	path = os.path.join(avatars_dir, random_avatar_file)
+	
+	headers = {
+					"authority": "discord.com",
+					"method": "PATCH",
+					"scheme": "https",
+					"accept": "*/*",
+					"accept-encoding": "gzip, deflate, br",
+					"accept-language": "en-US",
+					"authorization": token,
+					"origin": "https://discord.com",
+					"sec-ch-ua": '"Not/A)Brand";v="99", "Brave";v="115", "Chromium";v="115"',
+					"User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) discord/1.0.9020 Chrome/108.0.5359.215 Electron/22.3.26 Safari/537.36",
+					"sec-ch-ua-mobile": "?0",
+					"sec-ch-ua-platform": '"Windows"',
+					"sec-fetch-dest": "empty",
+					"sec-fetch-mode": "cors",
+					"sec-fetch-site": "same-origin",
+					"X-Debug-Options": "bugReporterEnabled",
+					"X-Discord-Locale": "en-US",
+					"X-Discord-Timezone": "Asia/Calcutta",
+					"X-Super-Properties": "eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiRGlzY29yZCBDbGllbnQiLCJyZWxlYXNlX2NoYW5uZWwiOiJzdGFibGUiLCJjbGllbnRfdmVyc2lvbiI6IjEuMC45MDIwIiwib3NfdmVyc2lvbiI6IjEwLjAuMTkwNDUiLCJvc19hcmNoIjoieDY0IiwiYXBwX2FyY2giOiJpYTMyIiwic3lzdGVtX2xvY2FsZSI6ImVuLVVTIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV09XNjQpIEFwcGxlV2ViS2l0LzUzNy4zNiAoS0hUTUwsIGxpa2UgR2Vja28pIGRpc2NvcmQvMS4wLjkwMjAgQ2hyb21lLzEwOC4wLjUzNTkuMjE1IEVsZWN0cm9uLzIyLjMuMjYgU2FmYXJpLzUzNy4zNiIsImJyb3dzZXJfdmVyc2lvbiI6IjIyLjMuMjYiLCJjbGllbnRfYnVpbGRfbnVtYmVyIjoyNDAyMzcsIm5hdGl2ZV9idWlsZF9udW1iZXIiOjM4NTE3LCJjbGllbnRfZXZlbnRfc291cmNlIjpudWxsLCJkZXNpZ25faWQiOjB9"
+			}
+	
+	payload = {
+			"avatar": f"data:image/jpeg;base64,{base64.b64encode(open(path, 'rb').read()).decode()}"
+	}
+	
+	r = sesh.patch("https://discord.com/api/v9/users/@me", json=payload, headers=headers)
+
+	current_time = datetime.datetime.now().strftime("%H:%M:%S")
+
+	if r.status_code == 200:
+			logger.info(f"{current_time} - Profile picture changed successfully to {random_avatar_file}")
+	else:
+			logger.info(f"{current_time} - Error: {r.status_code}")
+
+	sleep_duration = random.randint(300, 1200)
+	minutes, seconds = divmod(sleep_duration, 60)
+	logger.info(f"{current_time} - Waiting for {minutes} minutes and {seconds} seconds before the next change.")
+	time.sleep(sleep_duration)
