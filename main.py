@@ -8,18 +8,22 @@ import json
 from tls_client import Session
  
 def load_config():
+    required_keys = ["token", "avatars_dir", "log_file"]
+    config = {}
+
     if os.path.exists('config.json'):
         with open('config.json', 'r') as file:
-            return json.load(file)
-    else:
-        config = {
-            "token": input("Enter your token: "),
-            "avatars_dir": input("Enter the path to your avatars directory: ")
-        }
-        
-        with open('config.json', 'w') as file:
-            json.dump(config, file, indent=4)
-        return config
+            config = json.load(file)
+
+    missing_keys = [key for key in required_keys if key not in config]
+    for key in missing_keys:
+        value = input(f"Enter value for {key}: ")
+        config[key] = value
+
+    with open('config.json', 'w') as file:
+        json.dump(config, file, indent=4)
+
+    return config
 
 config = load_config()
 
@@ -31,7 +35,7 @@ avatars_dir = config["avatars_dir"]
 os.makedirs(avatars_dir, exist_ok=True)
 
 if not logger.handlers:
-    fh = logging.FileHandler("log.log")
+    fh = logging.FileHandler(config["log_file"])
     fh.setLevel(logging.INFO)
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
