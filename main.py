@@ -87,7 +87,7 @@ while True:
 	if r.status_code == 200:
 			logger.info(f"{current_time} - Profile picture changed successfully to {random_avatar_file}")
 	else:
-			logger.info(f"{current_time} - Error: {r.status_code} - Avatar: {path} JSON: {payload}")
+			logger.info(f"{current_time} - Error: {r.status_code} - Avatar: {path}")
 
 	sleep_duration = random.randint(300, 1200)
 	minutes, seconds = divmod(sleep_duration, 60)
