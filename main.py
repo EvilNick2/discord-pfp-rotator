@@ -8,57 +8,80 @@ import json
 from tls_client import Session
  
 def load_config():
-    required_keys = ["token", "avatars_dir", "log_file", "min_delay", "max_delay"]
-    config = {}
+		required_keys = ["token", "avatars_dir", "log_file", "min_delay", "max_delay"]
+		config = {}
 
-    if os.path.exists('config.json'):
-        with open('config.json', 'r') as file:
-            config = json.load(file)
+		if os.path.exists('config.json'):
+				with open('config.json', 'r') as file:
+						config = json.load(file)
 
-    if "min_delay" in config:
-        try:
-            min_delay = int(config["min_delay"])
-            if min_delay < 300:
-                print("Current min_delay is too low and could risk a ban. It must be at least 5 minutes (300 seconds).")
-                config["min_delay"] = input_new_min_delay()
-        except ValueError:
-            print("min_delay in config is not a valid integer.")
-            config["min_delay"] = input_new_min_delay()
+		if "min_delay" in config:
+				try:
+						min_delay = int(config["min_delay"])
+						if min_delay < 300:
+								print("Current min_delay is too low and could risk a ban. It must be at least 5 minutes (300 seconds).")
+								config["min_delay"] = input_new_delay("min_delay", 300)
+				except ValueError:
+						print("min_delay in config is not a valid integer.")
+						config["min_delay"] = input_new_delay("min_delay", 300)
 
-    missing_keys = [key for key in required_keys if key not in config]
-    for key in missing_keys:
-        config[key] = input_value_for_key(key)
+		if "max_delay" in config:
+			try:
+					max_delay = int(config["max_delay"])
+					min_delay = int(config.get("min_delay", 300))
+					if max_delay < 600:
+							print(f"Current max_delay ({max_delay}) is below the minimum required (600 seconds).")
+							config["max_delay"] = input_new_delay("max_delay", 600)
+					elif max_delay < min_delay:
+							print(f"Current max_delay ({max_delay}) is less than min_delay ({min_delay}). It must be at least equal to or more than min_delay.")
+							config["max_delay"] = input_new_delay("max_delay", max(min_delay, 600))
+			except ValueError:
+					print("max_delay in config is not a valid integer.")
+					config["max_delay"] = input_new_delay("max_delay", 600)
+																				
+		missing_keys = [key for key in required_keys if key not in config]
+		for key in missing_keys:
+				config[key] = input_value_for_key(key)
 
-    with open('config.json', 'w') as file:
-        json.dump(config, file, indent=4)
+		with open('config.json', 'w') as file:
+				json.dump(config, file, indent=4)
 
-    return config
+		return config
 
-def input_new_min_delay():
-    while True:
-        value = input("Enter a new value for min_delay (minimum 300 seconds): ")
-        try:
-            value = int(value)
-            if value >= 300:
-                return value
-            else:
-                print("Minimum delay must be at least 5 minutes (300 seconds) or you could risk a ban.")
-        except ValueError:
-            print("Please enter a valid integer for min_delay.")
+def input_new_delay(delay_type, min_value):
+		while True:
+				value = input(f"Enter a new value for {delay_type} (minimum {min_value} seconds): ")
+				try:
+						value = int(value)
+						if value >= min_value:
+								return int(value)
+						else:
+								print(f"{delay_type} must be at least {min_value} seconds or you could risk a ban.")
+				except ValueError:
+						print(f"Please enter a valid integer for {delay_type}.")
 
 def input_value_for_key(key):
-    while True:
-        value = input(f"Enter value for {key}: ")
-        if key == "min_delay":
-            try:
-                value = int(value)
-                if value < 300:
-                    print("Minimum delay must be at least 5 minutes (300 seconds) or you could risk a ban.")
-                    continue
-            except ValueError:
-                print("Please enter a valid integer for min_delay.")
-                continue
-        return value
+		while True:
+				value = input(f"Enter value for {key}: ")
+				if key == "min_delay":
+						try:
+								value = int(value)
+								if value < 300:
+										print("Delay must be at least 5 minutes (300 seconds) or you could risk a ban.")
+										continue
+						except ValueError:
+								print("Please enter a valid integer for delay.")
+								continue
+				elif key == "max_delay":
+						try:
+								value = int(value)
+								if value < 600:
+										print("Delay must be at least 10 minutes (600 seconds) or you could risk a ban.")
+										continue
+						except ValueError:
+								print("Please enter a valid integer for delay.")
+								continue
+				return value
 
 config = load_config()
 
@@ -70,13 +93,13 @@ avatars_dir = config["avatars_dir"]
 os.makedirs(avatars_dir, exist_ok=True)
 
 if not logger.handlers:
-    fh = logging.FileHandler(config["log_file"])
-    fh.setLevel(logging.INFO)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
-    
+		fh = logging.FileHandler(config["log_file"])
+		fh.setLevel(logging.INFO)
+		ch = logging.StreamHandler()
+		ch.setLevel(logging.INFO)
+		logger.addHandler(fh)
+		logger.addHandler(ch)
+		
 while True:
 	sesh = Session(client_identifier="chrome_115", random_tls_extension_order=True)
 	token = config["token"]
@@ -124,7 +147,7 @@ while True:
 	else:
 			logger.info(f"{current_time} - Error: {r.status_code} - Avatar: {path}")
 
-	sleep_duration = random.randint(300, 1200)
+	sleep_duration = random.randint(config, 1200)
 	minutes, seconds = divmod(sleep_duration, 60)
 	logger.info(f"{current_time} - Waiting for {minutes} minutes and {seconds} seconds before the next change.")
 	time.sleep(sleep_duration)
