@@ -147,7 +147,7 @@ while True:
 	else:
 			logger.info(f"{current_time} - Error: {r.status_code} - Avatar: {path}")
 
-	sleep_duration = random.randint(config, 1200)
+	sleep_duration = random.randint(config["min_delay"], config["max_delay"])
 	minutes, seconds = divmod(sleep_duration, 60)
 	logger.info(f"{current_time} - Waiting for {minutes} minutes and {seconds} seconds before the next change.")
 	time.sleep(sleep_duration)
