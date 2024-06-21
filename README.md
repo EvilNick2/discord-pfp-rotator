@@ -63,7 +63,7 @@ $ python main.py
 
 ## :memo: License ##
 
-This project is under license from MIT. For more details, see the [LICENSE](LICENSE.md) file.
+This project is under license from MIT. For more details, see the [LICENSE](LICENSE) file.
 
 
 Made with :heart: by <a href="https://github.com/EvilNick2" target="_blank">EvilNick2</a>
